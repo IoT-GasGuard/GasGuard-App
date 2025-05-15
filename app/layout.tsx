@@ -8,9 +8,12 @@ import { AirQualityProvider } from "@/context/air-quality-context"
 const inter = Inter({ subsets: ["latin"] })
 
 export const metadata: Metadata = {
-  title: "Air Quality Monitor",
+  title: "GasGuard",
   description: "IoT Air Quality Monitoring System",
-    generator: 'v0.dev'
+    generator: 'v0.dev',
+  icons:{
+    icon:"/flame-logo.svg"
+  }
 }
 
 export default function RootLayout({
