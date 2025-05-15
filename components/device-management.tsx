@@ -10,12 +10,12 @@ interface Device {
   id: string
   name: string
   lastData: string
-  state: string
+  status: string
 }
 
 export function DeviceManagement() {
   const [devices, setDevices] = useState<Device[]>([
-    { id: "dev1", name: "Living Room Sensor", state:"Online", lastData: "2 minutes ago" },
+    { id: "dev1", name: "Living Room Sensor", status:"Online", lastData: "2 minutes ago" }
   ])
 
   const [deviceId, setDeviceId] = useState("")
@@ -28,7 +28,7 @@ export function DeviceManagement() {
       id: deviceId,
       name: deviceName,
       lastData: "Just now",
-      state:"Online",
+      status:"Online",
     }
 
     setDevices([...devices, newDevice])
@@ -96,7 +96,7 @@ export function DeviceManagement() {
                         <div className="h-3 w-3 rounded-full bg-green-500"></div>
                         <div>
                           <div className="font-medium">{device.name}</div>
-                          <div className="text-sm text-gray-400">State: {device.state}</div>
+                          <div className="text-sm text-gray-400">Status: {device.status}</div>
                           <div className="text-sm text-gray-400">Last seen: {device.lastData}</div>
 
                         </div>

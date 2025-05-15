@@ -1,9 +1,10 @@
 import { LoginForm } from "@/components/login-form";
+import DashboardPage from "@/app/dashboard/page";
 
 export default function Home() {
   return (
-    <main className="flex min-h-screen flex-col items-center justify-center p-4 bg-black">
-      <LoginForm />
+    <main >
+      < DashboardPage />
     </main>
   )
 }

@@ -8,17 +8,17 @@ export default function DashboardPage() {
     <div className="min-h-screen bg-black text-white">
       <DashboardHeader />
       <main className="container mx-auto p-4 space-y-6">
-        <h1 className="text-3xl font-bold">Air Quality Dashboard</h1>
+        <h1 className="text-3xl font-bold">Gas Level Dashboard</h1>
 
         <div className="border border-gray-800 rounded-lg p-6">
-          <h2 className="text-xl font-bold mb-4">Real-time Air Quality</h2>
+          <h2 className="text-xl font-bold mb-4">Real-time Gas levels</h2>
           <AirQualityChart />
         </div>
 
-        {/* Responsive grid for status and actuators */}
+        {/* status and actuators */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div className="border border-gray-800 rounded-lg p-6">
-            <h2 className="text-xl font-bold mb-4">Air Quality Status</h2>
+            <h2 className="text-xl font-bold mb-4">Gas Safety Level</h2>
             <AirQualityStatus />
           </div>
 
