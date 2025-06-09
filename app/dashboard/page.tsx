@@ -1,9 +1,9 @@
 "use client";
 
 import  Navigation  from "@/components/navbar"
-import { AirQualityChart } from "@/components/air-quality-chart"
-import { AirQualityStatus } from "@/components/air-quality-status"
-import { ActuatorStatus } from "@/components/actuator-status"
+import { AirQualityChart } from "@/components/dashboard/air-quality-chart"
+import { AirQualityStatus } from "@/components/dashboard/air-quality-status"
+import { ActuatorStatus } from "@/components/dashboard/actuator-status"
 import {useState} from "react";
 
 export default function DashboardPage() {

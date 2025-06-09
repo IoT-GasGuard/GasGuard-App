@@ -84,6 +84,24 @@ body {
   }
 }
 
+.gasguard-primary {
+  background-color: #00d4aa;
+}
+
+.gasguard-blue {
+  background-color: #4a90e2;
+}
+
+.gasguard-card {
+  background-color: #1a1a1a;
+  border-color: #333333;
+}
+
+.gasguard-input {
+  background-color: #2a2a2a;
+  border-color: #404040;
+}
+
 
 @layer base {
   * {
