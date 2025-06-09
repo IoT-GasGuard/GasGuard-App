@@ -13,7 +13,7 @@ export default function DashboardPage() {
     <div className="min-h-screen bg-black text-white">
         <Navigation currentTab={currentTab} onTabChange={setCurrentTab} />
       <main className="container mx-auto p-4 space-y-6">
-        <h1 className="text-3xl font-bold">Gas Level Dashboard</h1>
+        <h1 className="text-3xl font-bold  pt-3">Gas Level Dashboard</h1>
 
         <div className="border border-gray-800 rounded-lg p-6 gasguard-card">
           <h2 className="text-xl font-bold mb-4">Real-time Gas levels</h2>

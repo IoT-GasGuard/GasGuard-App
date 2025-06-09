@@ -22,7 +22,7 @@ export default function DevicesPage() {
         <div className="min-h-screen bg-black text-white">
             <Navbar currentTab={currentTab} onTabChange={setCurrentTab} />
             <main className="container mx-auto p-4">
-                <h1 className="text-3xl font-bold mb-6">Device Management</h1>
+                <h1 className="text-3xl font-bold mb-6  pt-3">Device Management</h1>
                 <DeviceManagement
                     devices={devices}
                     setDevices={setDevices}

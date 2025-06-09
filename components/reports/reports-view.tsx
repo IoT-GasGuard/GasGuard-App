@@ -47,7 +47,7 @@ export default function ReportsSection({ devices, alerts }: ReportsSectionProps)
     return (
         <div className="space-y-6">
             <div className="flex items-center justify-between">
-                <h1 className="text-3xl font-bold text-white">Reports & Analytics</h1>
+                <h1 className="text-3xl font-bold text-white pt-3">Reports & Analytics</h1>
                 <div className="flex items-center gap-2">
                     <Calendar className="w-5 h-5 text-gray-400" />
                     <span className="text-gray-400">{new Date().toLocaleDateString()}</span>
