@@ -3,7 +3,7 @@
 import LightingControl from '@/components/lighting-control';
 import {useState} from "react";
 import Navbar from "@/components/navbar";
-import DeviceManagement from "@/components/device-management";
+
 
 export default function LightingPage() {
 

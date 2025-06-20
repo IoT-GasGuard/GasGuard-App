@@ -2,7 +2,8 @@ import axios from "axios";
 import environment from "../../environment/environment";
 
 const http = () =>{
-    const token = localStorage.getItem('token');
+    const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
+
     return axios.create({
         baseURL: environment.baseUrl,
         headers: {
