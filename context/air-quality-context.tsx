@@ -60,17 +60,22 @@ export function AirQualityProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (!isClient) return
 
-    const socket = new WebSocket("ws://localhost:8080/ws/monitoring");
-    const stompClient = Stomp.over(socket);
+      const socket = new WebSocket("wss://gasguard-api-282272338419.southamerica-west1.run.app/ws/monitoring");
+      const stompClient = Stomp.over(socket);
 
     stompClient.connect({}, () => {
       console.log("Conectado al WebSocket");
 
       stompClient.subscribe("/topic/gas/device2", (message:any) => {
+          console.log("✅ Suscrito al tópico /topic/gas/device2");
+
           const data = JSON.parse(message.body);
+          console.log("VALORES:", data);
+
           // logica aquí
           const currentValue = Math.min(Math.max(data.value, 0), 100)
           airQualityRef.current = currentValue
+
 
           setAirQualityData((prevData) => {
             const newData = [
@@ -86,6 +91,7 @@ export function AirQualityProvider({ children }: { children: ReactNode }) {
             return newData.slice(-6)
           })
 
+
           setAirQuality(currentValue)
 
           if (currentValue > 70) {
@@ -95,7 +101,10 @@ export function AirQualityProvider({ children }: { children: ReactNode }) {
             setActuatorsActive(false)
             setShowAlert(false)
           }
+
+
       });
+
 
     }, (error:any) => {
         console.error("Error STOMP:", error);

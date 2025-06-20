@@ -4,10 +4,20 @@ import  Navigation  from "@/components/navbar"
 import { AirQualityChart } from "@/components/dashboard/air-quality-chart"
 import { AirQualityStatus } from "@/components/dashboard/air-quality-status"
 import { ActuatorStatus } from "@/components/dashboard/actuator-status"
-import {useState} from "react";
+import {useEffect, useState} from "react";
+import {useRouter} from "next/navigation";
 
 export default function DashboardPage() {
   const [currentTab, setCurrentTab] = useState("dashboard")
+
+  //to redirect to login if no token is found (the user is not logged in)
+  const router = useRouter()
+  useEffect(() => {
+    const token = localStorage.getItem("token")
+    if (!token) {
+      router.push("/")
+    }
+  }, [router])
 
   return (
     <div className="min-h-screen bg-black text-white">
