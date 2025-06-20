@@ -5,6 +5,7 @@ const http = () =>{
     const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
 
     return axios.create({
+
         baseURL: environment.baseUrl,
         headers: {
             'Authorization': `Bearer ${token}`,
