@@ -20,11 +20,13 @@ export class AuthService {
                 email,
                 password
             });
-            const { token } = response.data;
+            const { token, profileId } = response.data;
 
-            // Guarda el token en localStorage
+
             localStorage.setItem('token', token);
             localStorage.setItem('email', email);
+            localStorage.setItem('profileId', profileId);
+
             return response.data;
         } catch (error) {
             console.error('Error en la autenticación:', error);
