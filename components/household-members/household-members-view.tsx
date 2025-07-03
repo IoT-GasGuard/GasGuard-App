@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -10,6 +10,8 @@ import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Badge } from "@/components/ui/badge"
 import { Switch } from "@/components/ui/switch"
 import { Trash2, Edit, Plus, CheckCircle, AlertTriangle, Users, Phone, Mail, Bell } from "lucide-react"
+import { HouseholdService } from "@/public/services/household.service"
+import { HouseholdMemberModel } from "@/shared/householdMember.model"
 
 interface HouseholdMember {
     id: string
@@ -25,24 +27,9 @@ interface HouseholdMembersProps {
 }
 
 export default function HouseholdMembers({ setAlerts }: HouseholdMembersProps) {
-    const [members, setMembers] = useState<HouseholdMember[]>([
-        {
-            id: "1",
-            name: "Jair Velasquez",
-            email: "jairVelasquez@email.com",
-            phone: "+1 (555) 123-4567",
-            emergencyContact: true,
-            gasAlerts: true,
-        },
-        {
-            id: "2",
-            name: "Kanarian Canario",
-            email: "KKKanarian@email.com",
-            phone: "+1 (555) 987-6543",
-            emergencyContact: false,
-            gasAlerts: true,
-        },
-    ])
+    const [members, setMembers] = useState<HouseholdMember[]>([])
+    const [profileId, setProfileId] = useState<string>("")
+    const [loading, setLoading] = useState<boolean>(true)
 
     const [newMember, setNewMember] = useState({
         name: "",
@@ -58,6 +45,33 @@ export default function HouseholdMembers({ setAlerts }: HouseholdMembersProps) {
     const [isAddDialogOpen, setIsAddDialogOpen] = useState(false)
     const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
 
+    const householdService = new HouseholdService()
+
+    useEffect(() => {
+        const storedProfileId = localStorage.getItem('profileId')
+        if (storedProfileId) {
+            setProfileId(storedProfileId)
+            fetchHouseholdMembers(storedProfileId)
+        } else {
+            setLoading(false)
+            setShowError("No user profile found. Please log in again.")
+        }
+    }, [])
+
+    const fetchHouseholdMembers = async (id: string) => {
+        try {
+            setLoading(true)
+            const data = await householdService.getHouseholdMembersByProfileId(id)
+            setMembers(data)
+        } catch (error) {
+            console.error("Error fetching household members:", error)
+            setShowError("Could not load household members. Please try again later.")
+            setTimeout(() => setShowError(""), 3000)
+        } finally {
+            setLoading(false)
+        }
+    }
+
     const validateMember = (member: any) => {
         if (!member.name.trim()) return "Name is required"
         if (!member.email.trim()) return "Email is required"
@@ -72,7 +86,7 @@ export default function HouseholdMembers({ setAlerts }: HouseholdMembersProps) {
         return null
     }
 
-    const handleAddMember = () => {
+    const handleAddMember = async () => {
         const error = validateMember(newMember)
         if (error) {
             setShowError(error)
@@ -87,37 +101,46 @@ export default function HouseholdMembers({ setAlerts }: HouseholdMembersProps) {
             return
         }
 
-        const member: HouseholdMember = {
-            id: Date.now().toString(),
-            ...newMember,
+        try {
+            const householdMemberData = {
+                ...newMember,
+                profileId: profileId
+            }
+
+            const createdMember = await householdService.createHouseholdMember(householdMemberData)
+
+
+            await fetchHouseholdMembers(profileId)
+            setNewMember({
+                name: "",
+                email: "",
+                phone: "",
+                emergencyContact: false,
+                gasAlerts: true,
+            })
+            setIsAddDialogOpen(false)
+            setShowSuccess(`${createdMember.name} has been added to your household members`)
+
+            setAlerts((prev: any) => [
+                ...prev,
+                {
+                    id: Date.now().toString(),
+                    type: "system",
+                    message: `New member "${createdMember.name}" added to notification list`,
+                    timestamp: new Date().toLocaleString(),
+                    severity: "low",
+                },
+            ])
+
+            setTimeout(() => setShowSuccess(""), 3000)
+        } catch (error) {
+            console.error("Error adding member:", error)
+            setShowError("Could not add member. Please try again later.")
+            setTimeout(() => setShowError(""), 3000)
         }
-
-        setMembers([...members, member])
-        setNewMember({
-            name: "",
-            email: "",
-            phone: "",
-            emergencyContact: false,
-            gasAlerts: true,
-        })
-        setIsAddDialogOpen(false)
-        setShowSuccess(`${member.name} has been added to your household members`)
-
-        setAlerts((prev: any) => [
-            ...prev,
-            {
-                id: Date.now().toString(),
-                type: "system",
-                message: `New household member "${member.name}" added to notification list`,
-                timestamp: new Date().toLocaleString(),
-                severity: "low",
-            },
-        ])
-
-        setTimeout(() => setShowSuccess(""), 3000)
     }
 
-    const handleEditMember = () => {
+    const handleEditMember = async () => {
         if (!editingMember) return
 
         const error = validateMember(editingMember)
@@ -127,58 +150,75 @@ export default function HouseholdMembers({ setAlerts }: HouseholdMembersProps) {
             return
         }
 
-        // Check if new email conflicts with existing members (excluding current member)
+        // check if email already exists
         if (members.some((m) => m.email === editingMember.email && m.id !== editingMember.id)) {
             setShowError("A member with this email already exists")
             setTimeout(() => setShowError(""), 3000)
             return
         }
 
-        setMembers(members.map((m) => (m.id === editingMember.id ? editingMember : m)))
-        setShowSuccess(`${editingMember.name}'s information has been updated`)
-        setIsEditDialogOpen(false)
-        setEditingMember(null)
+        try {
+           // await householdService.updateHouseholdMember(editingMember.id, editingMember)
 
-        setAlerts((prev: any) => [
-            ...prev,
-            {
-                id: Date.now().toString(),
-                type: "system",
-                message: `Household member "${editingMember.name}" information updated`,
-                timestamp: new Date().toLocaleString(),
-                severity: "low",
-            },
-        ])
 
-        setTimeout(() => setShowSuccess(""), 3000)
+            setMembers(members.map((m) => (m.id === editingMember.id ? editingMember : m)))
+            setShowSuccess(`${editingMember.name}'s information has been updated`)
+            setIsEditDialogOpen(false)
+            setEditingMember(null)
+
+            setAlerts((prev: any) => [
+                ...prev,
+                {
+                    id: Date.now().toString(),
+                    type: "system",
+                    message: `Member "${editingMember.name}" information updated`,
+                    timestamp: new Date().toLocaleString(),
+                    severity: "low",
+                },
+            ])
+
+            setTimeout(() => setShowSuccess(""), 3000)
+        } catch (error) {
+            console.error("Error updating member:", error)
+            setShowError("Could not update information. Please try again later.")
+            setTimeout(() => setShowError(""), 3000)
+        }
     }
 
-    const handleDeleteMember = (memberId: string) => {
+    const handleDeleteMember = async (memberId: string) => {
         const member = members.find((m) => m.id === memberId)
         if (!member) return
 
-        setMembers(members.filter((m) => m.id !== memberId))
-        setShowSuccess(`${member.name} has been removed from household members`)
+        try {
+            //await householdService.deleteHouseholdMember(memberId)
 
-        setAlerts((prev: any) => [
-            ...prev,
-            {
-                id: Date.now().toString(),
-                type: "system",
-                message: `Household member "${member.name}" removed from notification list`,
-                timestamp: new Date().toLocaleString(),
-                severity: "low",
-            },
-        ])
 
-        setTimeout(() => setShowSuccess(""), 3000)
+            setMembers(members.filter((m) => m.id !== memberId))
+            setShowSuccess(`${member.name} has been removed from household members`)
+
+            setAlerts((prev: any) => [
+                ...prev,
+                {
+                    id: Date.now().toString(),
+                    type: "system",
+                    message: `Member "${member.name}" removed from notification list`,
+                    timestamp: new Date().toLocaleString(),
+                    severity: "low",
+                },
+            ])
+
+            setTimeout(() => setShowSuccess(""), 3000)
+        } catch (error) {
+            console.error("Error deleting member:", error)
+            setShowError("Could not remove member. Please try again later.")
+            setTimeout(() => setShowError(""), 3000)
+        }
     }
 
     return (
         <div className="space-y-6">
             <div className="flex items-center justify-between">
                 <div>
-
                     <p className="text-gray-400 mt-2">Manage who receives notifications when gas alerts are detected</p>
                 </div>
                 <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
@@ -290,10 +330,12 @@ export default function HouseholdMembers({ setAlerts }: HouseholdMembersProps) {
                     </CardTitle>
                 </CardHeader>
                 <CardContent>
-                    {members.length === 0 ? (
+                    {loading ? (
+                        <p className="text-center text-gray-400 py-8">Loading household members...</p>
+                    ) : members.length === 0 ? (
                         <div className="text-center py-8">
                             <Users className="w-12 h-12 text-gray-600 mx-auto mb-4" />
-                            <p className="text-gray-400 mb-2">No household members registered yet</p>
+                            <p className="text-gray-400 mb-2">No household members registered</p>
                             <p className="text-sm text-gray-500">Add members to receive gas leak notifications</p>
                         </div>
                     ) : (
@@ -470,11 +512,11 @@ export default function HouseholdMembers({ setAlerts }: HouseholdMembersProps) {
                                 </li>
                                 <li className="flex items-center gap-2">
                                     <div className="w-1.5 h-1.5 bg-[#00D4AA] rounded-full" />
-                                    Automatic ventilation system activation
+                                    Automatic activation of ventilation system
                                 </li>
                                 <li className="flex items-center gap-2">
                                     <div className="w-1.5 h-1.5 bg-[#00D4AA] rounded-full" />
-                                    Gas supply shutoff if levels remain high
+                                    Gas supply shutdown if levels remain high
                                 </li>
                             </ul>
                         </div>

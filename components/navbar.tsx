@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import {useEffect, useState} from "react"
 import { Button } from "@/components/ui/button"
 import { useRouter } from 'next/navigation';
 import {
@@ -19,11 +19,21 @@ interface NavigationProps {
 
 export default function Navigation({ currentTab, onTabChange }: NavigationProps) {
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false)
+  const [email, setUserEmail]= useState("")
   const router = useRouter();
 
+  useEffect(() => {
+    const email = localStorage.getItem("email");
+    //if the email exist and is in localstorage
+    if(email){
+      setUserEmail(email)
+    }
+  })
+
   const handleLogout = () => {
-    console.log("Logging out...");
-    // TODO: lógica de logout
+    localStorage.removeItem("token")
+    localStorage.removeItem("userEmail")
+    router.push("/")
   }
 
   const handleNavigation = (tab: string, path: string) => {
@@ -89,7 +99,7 @@ export default function Navigation({ currentTab, onTabChange }: NavigationProps)
                     className="flex items-center gap-2 text-gray-300 hover:text-white hover:bg-gray-800"
                 >
                   <User className="w-4 h-4" />
-                  <span className="text-sm">demo@example.com</span>
+                  <span className="text-sm">{email || "Usuario"}</span>
                   <ChevronDown className="w-4 h-4" />
                 </Button>
               </DropdownMenuTrigger>
