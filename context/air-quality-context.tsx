@@ -1,7 +1,14 @@
 "use client"
 
-import { createContext, useContext, useState, useEffect, useRef, type ReactNode } from "react";
-import { Client, Stomp } from "@stomp/stompjs";
+import {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+  useRef,
+  type ReactNode,
+} from "react"
+import { getStompClient } from "@/lib/stompClient"
 
 interface AirQualityContextType {
   airQuality: number
@@ -14,20 +21,20 @@ interface AirQualityContextType {
 }
 
 const defaultAirQualityData = Array(6)
-    .fill(null)
-    .map((_, i) => ({
-      value: Math.floor(Math.random() * 30) + 1, // Valores iniciales bajos (1-30)
-      timestamp: `00:0${i}`,
-    }))
+  .fill(null)
+  .map((_, i) => ({
+    value: Math.floor(Math.random() * 30) + 1,
+    timestamp: `00:0${i}`,
+  }))
 
 const AirQualityContext = createContext<AirQualityContextType>({
   airQuality: 30,
   airQualityData: defaultAirQualityData,
-  resetAirQuality: () => {},
+  resetAirQuality: () => { },
   actuatorsActive: false,
-  setActuatorsActive: () => {},
+  setActuatorsActive: () => { },
   showAlert: false,
-  setShowAlert: () => {},
+  setShowAlert: () => { },
 })
 
 export function AirQualityProvider({ children }: { children: ReactNode }) {
@@ -45,13 +52,13 @@ export function AirQualityProvider({ children }: { children: ReactNode }) {
 
     if (!dataInitializedRef.current) {
       setAirQualityData((prev) =>
-          prev.map((item, i) => ({
-            ...item,
-            timestamp: new Date(Date.now() - (5 - i) * 4000).toLocaleTimeString([], {
-              hour: "2-digit",
-              minute: "2-digit",
-            }),
-          })),
+        prev.map((item, i) => ({
+          ...item,
+          timestamp: new Date(Date.now() - (5 - i) * 4000).toLocaleTimeString([], {
+            hour: "2-digit",
+            minute: "2-digit",
+          }),
+        }))
       )
       dataInitializedRef.current = true
     }
@@ -60,106 +67,56 @@ export function AirQualityProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (!isClient) return
 
-      const socket = new WebSocket("wss://gasguard-api-282272338419.southamerica-west1.run.app/ws/monitoring");
-      const stompClient = Stomp.over(socket);
+    const stompClient = getStompClient()
 
-    stompClient.connect({}, () => {
-      console.log("Conectado al WebSocket");
+    const onConnect = () => {
+      console.log("✅ Conectado al WebSocket")
 
-      stompClient.subscribe("/topic/gas/device2", (message:any) => {
-          console.log("✅ Suscrito al tópico /topic/gas/device2");
+      stompClient.subscribe("/topic/gas/device2", (message: any) => {
+        const data = JSON.parse(message.body)
+        const currentValue = Math.min(Math.max(data.value, 0), 100)
+        airQualityRef.current = currentValue
 
-          const data = JSON.parse(message.body);
-          console.log("VALORES:", data);
+        setAirQualityData((prevData) => {
+          const newData = [
+            ...prevData,
+            {
+              value: currentValue,
+              timestamp: new Date(data.timestamp).toLocaleTimeString([], {
+                hour: "2-digit",
+                minute: "2-digit",
+              }),
+            },
+          ]
+          return newData.slice(-6)
+        })
 
-          // logica aquí
-          const currentValue = Math.min(Math.max(data.value, 0), 100)
-          airQualityRef.current = currentValue
+        setAirQuality(currentValue)
 
-
-          setAirQualityData((prevData) => {
-            const newData = [
-              ...prevData,
-              {
-                value: currentValue,
-                timestamp: new Date(data.timestamp).toLocaleTimeString([], {
-                  hour: "2-digit",
-                  minute: "2-digit",
-                }),
-              },
-            ]
-            return newData.slice(-6)
-          })
-
-
-          setAirQuality(currentValue)
-
-          if (currentValue > 70) {
-            setActuatorsActive(true)
-            setShowAlert(true)
-          } else {
-            setActuatorsActive(false)
-            setShowAlert(false)
-          }
-
-
-      });
-
-
-    }, (error:any) => {
-        console.error("Error STOMP:", error);
-    });
-
-    return () => {
-      stompClient.disconnect(() => console.log("🛑 Desconectado"));
-    };
-
-  }, [isClient])
-
-  /*
-  useEffect(() => {
-    if (!isClient) return
-
-    const interval = setInterval(() => {
-      let currentValue = airQualityRef.current
-
-      // Aumentar la probabilidad de picos altos
-      const isSpike = Math.random() < 0.1
-      const operation = isSpike ? 1 : Math.random() < 0.5 ? 1 : -1
-      const changeAmount = isSpike
-          ? Math.floor(Math.random() * 30) + 20
-          : Math.floor(Math.random() * 10) + 1
-
-      currentValue = Math.min(Math.max(currentValue + operation * changeAmount, 0), 100)
-
-      airQualityRef.current = currentValue
-
-      setAirQualityData((prevData) => {
-        const newData = [
-          ...prevData,
-          {
-            value: currentValue,
-            timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
-          },
-        ]
-
-        return newData.slice(-6)
+        if (currentValue > 70) {
+          setActuatorsActive(true)
+          setShowAlert(true)
+        } else {
+          setActuatorsActive(false)
+          setShowAlert(false)
+        }
       })
+    }
 
-      setAirQuality(currentValue)
+    stompClient.connected
+      ? onConnect()
+      : (stompClient.onConnect = onConnect)
 
-      if (currentValue > 70) {
-        setActuatorsActive(true)
-        setShowAlert(true)
-      } else {
-        setActuatorsActive(false)
-        setShowAlert(false)
-      }
-    }, 4000)
+    stompClient.onStompError = (frame) => {
+      console.error("❌ STOMP error:", frame.headers["message"])
+      console.error("Detalles:", frame.body)
+    }
 
-    return () => clearInterval(interval)
+    // No desconectamos porque es singleton
+    return () => {
+      // Optional: agregar named unsubscribe si fuera necesario
+    }
   }, [isClient])
-  */
 
   const resetAirQuality = () => {
     const resetValue = 30
@@ -171,7 +128,10 @@ export function AirQualityProvider({ children }: { children: ReactNode }) {
       if (newData.length > 0) {
         newData[newData.length - 1] = {
           value: resetValue,
-          timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+          timestamp: new Date().toLocaleTimeString([], {
+            hour: "2-digit",
+            minute: "2-digit",
+          }),
         }
       }
       return newData
@@ -182,23 +142,22 @@ export function AirQualityProvider({ children }: { children: ReactNode }) {
   }
 
   return (
-      <AirQualityContext.Provider
-          value={{
-            airQuality,
-            airQualityData,
-            resetAirQuality,
-            actuatorsActive,
-            setActuatorsActive,
-            showAlert,
-            setShowAlert,
-          }}
-      >
-        {children}
-      </AirQualityContext.Provider>
+    <AirQualityContext.Provider
+      value={{
+        airQuality,
+        airQualityData,
+        resetAirQuality,
+        actuatorsActive,
+        setActuatorsActive,
+        showAlert,
+        setShowAlert,
+      }}
+    >
+      {children}
+    </AirQualityContext.Provider>
   )
 }
 
 export function useAirQuality() {
-  const context = useContext(AirQualityContext)
-  return context
+  return useContext(AirQualityContext)
 }
