@@ -15,12 +15,12 @@ const http = () => {
 
 export class ReportService {
 
-    async getReportByDeviceId(deviceId) {
+    async getReportsByProfileId(profileId) {
         try {
-            const response = await http().get(`/reports/device/${deviceId}`);
+            const response = await http().get(`/reports/profile/${profileId}`);
             return response.data;
         } catch (error) {
-            console.error("Error al obtener el reporte del dispositivo:", error);
+            console.error("Error al obtener los reportes por profileId:", error);
             throw error;
         }
     }
