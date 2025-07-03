@@ -1,10 +1,6 @@
-import { LoginForm } from "@/components/login-form";
-import DashboardPage from "@/app/dashboard/page";
+import {redirect} from "next/navigation";
+
 
 export default function Home() {
-  return (
-    <main >
-      < DashboardPage />
-    </main>
-  )
+    redirect("/login")
 }
