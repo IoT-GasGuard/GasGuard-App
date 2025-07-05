@@ -14,9 +14,12 @@ export default function DashboardPage() {
   //to redirect to login if no token is found (the user is not logged in)
   const router = useRouter()
   useEffect(() => {
-    const token = localStorage.getItem("token")
-    if (!token) {
-      router.push("/")
+
+    if (typeof window !== 'undefined') {
+      const token = localStorage.getItem("token")
+      if (!token) {
+        router.push("/")
+      }
     }
   }, [router])
 

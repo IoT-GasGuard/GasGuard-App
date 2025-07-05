@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { DeviceService } from "@/public/services/device.service";
 import { Device } from "@/shared/device.model";
+import {useRouter} from "next/navigation";
 
 interface DeviceSelectorProps {
     selectedDeviceId: string | null;
@@ -11,10 +12,23 @@ interface DeviceSelectorProps {
 export function DeviceSelector({ selectedDeviceId, onDeviceChange }: DeviceSelectorProps) {
     const [devices, setDevices] = useState<Device[]>([]);
     const [loading, setLoading] = useState(true);
-    const profileId = localStorage.getItem("profileId");
+    const [profileId, setProfileId] = useState<string | null>(null);
+
+    const router = useRouter()
+    useEffect(() => {
+
+        if (typeof window !== 'undefined') {
+            const token = localStorage.getItem("token")
+            if (!token) {
+                router.push("/")
+            }
+        }
+    }, [router])
 
     useEffect(() => {
         const fetchDevices = async () => {
+            if (!profileId) return;
+
             try {
                 const deviceService = new DeviceService();
                 const deviceData = await deviceService.getAllDevicesByProfileId(profileId);
