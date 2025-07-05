@@ -19,26 +19,29 @@ interface NavigationProps {
 
 export default function Navigation({ currentTab, onTabChange }: NavigationProps) {
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false)
-  const [email, setUserEmail]= useState("")
+  const [email, setEmail] = useState<string | null>(null)
   const router = useRouter();
 
   useEffect(() => {
-    const email = localStorage.getItem("email");
-    //if the email exist and is in localstorage
-    if(email){
-      setUserEmail(email)
+
+    if (typeof window !== 'undefined') {
+      const userEmail = localStorage.getItem("email")
+      setEmail(userEmail)
     }
-  })
+  }, [])
 
   const handleLogout = () => {
-    localStorage.removeItem("token")
-    localStorage.removeItem("userEmail")
-    router.push("/")
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem("token")
+      localStorage.removeItem("email")
+      localStorage.removeItem("profileId")
+    }
+    router.push("/login")
   }
 
-  const handleNavigation = (tab: string, path: string) => {
-    onTabChange(tab);
-    router.push(path);
+  const handleNavigation = (tab: string, route: string) => {
+    onTabChange(tab)
+    router.push(route)
   }
 
   return (
