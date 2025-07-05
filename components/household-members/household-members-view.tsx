@@ -13,6 +13,7 @@ import { Switch } from "@/components/ui/switch"
 import { Trash2, Edit, Plus, CheckCircle, AlertTriangle, Users, Phone, Mail, Bell } from "lucide-react"
 import { HouseholdService } from "@/public/services/household.service"
 import { HouseholdMemberModel } from "@/shared/householdMember.model"
+import {Loading} from "@/components/ui/loading";
 
 interface HouseholdMember {
     id: string
@@ -324,7 +325,7 @@ export default function HouseholdMembers({ setAlerts }: HouseholdMembersProps) {
                 </CardHeader>
                 <CardContent>
                     {loading ? (
-                        <p className="text-center text-gray-400 py-8">Loading household members...</p>
+                        <Loading />
                     ) : members.length === 0 ? (
                         <div className="text-center py-8">
                             <Users className="w-12 h-12 text-gray-600 mx-auto mb-4" />

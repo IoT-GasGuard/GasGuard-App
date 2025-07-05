@@ -62,12 +62,13 @@ export default function ReportsSection({ devices, alerts }: ReportsSectionProps)
                     >
                         Gas Incidents
                     </TabsTrigger>
-                    <TabsTrigger
+
+                   {/* <TabsTrigger
                         value="normal"
                         className="data-[state=active]:bg-[#00D4AA] data-[state=active]:text-black text-white"
                     >
                         Normal Operations
-                    </TabsTrigger>
+                    </TabsTrigger>*/}
                 </TabsList>
 
                 <TabsContent value="incidents">

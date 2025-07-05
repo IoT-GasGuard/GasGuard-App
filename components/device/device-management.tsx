@@ -19,12 +19,12 @@ export default function DeviceManagement({ devices, setDevices, setAlerts }: Dev
     const [showSuccess, setShowSuccess] = useState("")
     const [showError, setShowError] = useState("")
     const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
+    const [isLoading, setIsLoading] = useState(true)
 
     const deviceService = new DeviceService()
     const profileId = localStorage.getItem("profileId")
 
-    const validateDevice = (device: {deviceId: string; name: string; location?: string }) => {
-        // validations
+    const validateDevice = (device: { deviceId: string; name: string; location?: string }) => {
         if (!device.deviceId.trim()) return "Device ID is required"
         if (!device.name.trim()) return "Device name is required"
         if (device.deviceId.length < 3) return "Device ID must be at least 3 characters"
@@ -35,12 +35,14 @@ export default function DeviceManagement({ devices, setDevices, setAlerts }: Dev
     useEffect(() => {
         const fetchDevices = async () => {
             try {
-                const profileId = localStorage.getItem("profileId")
+                setIsLoading(true)
                 const devicesFromApi = await deviceService.getAllDevicesByProfileId(profileId)
                 setDevices(devicesFromApi)
             } catch (error) {
                 console.error("Error cargando dispositivos:", error)
                 setShowError("Error loading devices. Please try again.")
+            } finally {
+                setIsLoading(false)
             }
         }
 
@@ -72,8 +74,6 @@ export default function DeviceManagement({ devices, setDevices, setAlerts }: Dev
             const updatedDeviceList = await deviceService.getAllDevicesByProfileId(profileId)
             setDevices(updatedDeviceList)
             setShowSuccess("Device paired successfully!")
-
-
             setNewDevice({ deviceId: "", name: "", location: "" })
         } catch (error) {
             setShowError("Error pairing device. Please try again.")
@@ -109,7 +109,7 @@ export default function DeviceManagement({ devices, setDevices, setAlerts }: Dev
         const device = devices.find((d) => d.id === deviceId)
         if (!device) return
 
-        if (device.gasLevel > 71 ) {
+        if (device.gasLevel > 71) {
             setShowError("Cannot delete device with active alerts. Please resolve all issues first.")
             setTimeout(() => setShowError(""), 5000)
             return
@@ -119,13 +119,11 @@ export default function DeviceManagement({ devices, setDevices, setAlerts }: Dev
             await deviceService.deleteDevice(deviceId)
             const updatedDeviceList = await deviceService.getAllDevicesByProfileId(profileId)
             setDevices(updatedDeviceList)
-
             setShowSuccess(`Device "${device.name}" deleted successfully`)
         } catch (error) {
             setShowError("Error deleting device. Please try again.")
             console.error(error)
         }
-
         setTimeout(() => setShowSuccess(""), 3000)
     }
 
@@ -139,9 +137,9 @@ export default function DeviceManagement({ devices, setDevices, setAlerts }: Dev
     }
 
     const handleEditButtonClick = (device: Device | null) => {
-        setEditingDevice(device);
+        setEditingDevice(device)
         if (device !== null) {
-            setIsEditDialogOpen(true);
+            setIsEditDialogOpen(true)
         }
     }
 
@@ -159,6 +157,7 @@ export default function DeviceManagement({ devices, setDevices, setAlerts }: Dev
 
                 <DeviceListCard
                     devices={devices}
+                    isLoading={isLoading}
                     editingDevice={editingDevice}
                     isEditDialogOpen={isEditDialogOpen}
                     setIsEditDialogOpen={setIsEditDialogOpen}

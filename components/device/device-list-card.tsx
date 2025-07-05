@@ -1,10 +1,12 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import {Device} from "@/shared/device.model";
+import { Device } from "@/shared/device.model"
 import DeviceItem from "./device-item"
 import EditDeviceDialog from "./edit-device-dialog"
+import { Loading } from "@/components/ui/loading"
 
 interface DeviceListCardProps {
     devices: Device[]
+    isLoading: boolean
     editingDevice: Device | null
     isEditDialogOpen: boolean
     setIsEditDialogOpen: (open: boolean) => void
@@ -16,6 +18,7 @@ interface DeviceListCardProps {
 
 export default function DeviceListCard({
                                            devices,
+                                           isLoading,
                                            editingDevice,
                                            isEditDialogOpen,
                                            setIsEditDialogOpen,
@@ -30,7 +33,9 @@ export default function DeviceListCard({
                 <CardTitle className="text-white">Your Devices</CardTitle>
             </CardHeader>
             <CardContent>
-                {devices.length === 0 ? (
+                {isLoading ? (
+                    <Loading />
+                ) : devices.length === 0 ? (
                     <p className="text-gray-400 text-center py-8">No devices paired yet</p>
                 ) : (
                     <div className="space-y-3">
