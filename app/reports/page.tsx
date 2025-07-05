@@ -3,7 +3,7 @@
 import ReportsSection from "@/components/reports/reports-view";
 import {useState} from "react";
 import Navbar from "@/components/navbar";
-import DeviceManagement from "@/components/device-management";
+
 
 const mockDevices = [
     {

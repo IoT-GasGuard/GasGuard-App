@@ -1,3 +1,4 @@
+
 "use client"
 
 import { useEffect, useState } from "react"
@@ -21,8 +22,8 @@ export default function DeviceManagement({ devices, setDevices, setAlerts }: Dev
     const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
     const [isLoading, setIsLoading] = useState(true)
 
+
     const deviceService = new DeviceService()
-    const profileId = localStorage.getItem("profileId")
 
     const validateDevice = (device: { deviceId: string; name: string; location?: string }) => {
         if (!device.deviceId.trim()) return "Device ID is required"
@@ -34,20 +35,29 @@ export default function DeviceManagement({ devices, setDevices, setAlerts }: Dev
 
     useEffect(() => {
         const fetchDevices = async () => {
+            if (!profileId) return
             try {
                 setIsLoading(true)
+
                 const devicesFromApi = await deviceService.getAllDevicesByProfileId(profileId)
                 setDevices(devicesFromApi)
             } catch (error) {
-                console.error("Error cargando dispositivos:", error)
+                console.error("Error loading devices:", error)
                 setShowError("Error loading devices. Please try again.")
             } finally {
                 setIsLoading(false)
             }
         }
-
         fetchDevices()
-    }, [])
+    }, [profileId, deviceService, setDevices])
+
+    const validateDevice = (device: { deviceId: string; name: string; location?: string }) => {
+        if (!device.deviceId.trim()) return "Device ID is required"
+        if (!device.name.trim()) return "Device name is required"
+        if (device.deviceId.length < 3) return "Device ID must be at least 3 characters"
+        if (device.name.length < 2) return "Device name must be at least 2 characters"
+        return null
+    }
 
     const handlePairDevice = async () => {
         const error = validateDevice(newDevice)
@@ -62,6 +72,8 @@ export default function DeviceManagement({ devices, setDevices, setAlerts }: Dev
             setTimeout(() => setShowError(""), 3000)
             return
         }
+
+        if (!profileId) return
 
         try {
             await deviceService.createDevice({
@@ -82,8 +94,7 @@ export default function DeviceManagement({ devices, setDevices, setAlerts }: Dev
     }
 
     const handleEditDevice = async () => {
-        if (!editingDevice) return
-
+        if (!editingDevice || !profileId) return
         const error = validateDevice(editingDevice)
         if (error) {
             setShowError(error)
@@ -95,7 +106,6 @@ export default function DeviceManagement({ devices, setDevices, setAlerts }: Dev
             await deviceService.updateDevice(editingDevice.id, editingDevice)
             const updatedDeviceList = await deviceService.getAllDevicesByProfileId(profileId)
             setDevices(updatedDeviceList)
-
             setShowSuccess("Device updated successfully!")
             setIsEditDialogOpen(false)
             setEditingDevice(null)
@@ -107,7 +117,7 @@ export default function DeviceManagement({ devices, setDevices, setAlerts }: Dev
 
     const handleDeleteDevice = async (deviceId: string) => {
         const device = devices.find((d) => d.id === deviceId)
-        if (!device) return
+        if (!device || !profileId) return
 
         if (device.gasLevel > 71) {
             setShowError("Cannot delete device with active alerts. Please resolve all issues first.")
