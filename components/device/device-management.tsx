@@ -20,9 +20,17 @@ export default function DeviceManagement({ devices, setDevices, setAlerts }: Dev
     const [showError, setShowError] = useState("")
     const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
     const [isLoading, setIsLoading] = useState(true)
+    const [profileId, setProfileId] = useState<string | null>(null)
 
     const deviceService = new DeviceService()
-    const profileId = localStorage.getItem("profileId")
+
+
+    useEffect(() => {
+        if (typeof window !== 'undefined') {
+            const id = localStorage.getItem("profileId")
+            setProfileId(id)
+        }
+    }, [])
 
     const validateDevice = (device: { deviceId: string; name: string; location?: string }) => {
         if (!device.deviceId.trim()) return "Device ID is required"
@@ -34,6 +42,9 @@ export default function DeviceManagement({ devices, setDevices, setAlerts }: Dev
 
     useEffect(() => {
         const fetchDevices = async () => {
+
+            if (!profileId) return
+
             try {
                 setIsLoading(true)
                 const devicesFromApi = await deviceService.getAllDevicesByProfileId(profileId)
@@ -47,9 +58,11 @@ export default function DeviceManagement({ devices, setDevices, setAlerts }: Dev
         }
 
         fetchDevices()
-    }, [])
+    }, [profileId])
 
     const handlePairDevice = async () => {
+        if (!profileId) return
+
         const error = validateDevice(newDevice)
         if (error) {
             setShowError(error)
@@ -82,7 +95,7 @@ export default function DeviceManagement({ devices, setDevices, setAlerts }: Dev
     }
 
     const handleEditDevice = async () => {
-        if (!editingDevice) return
+        if (!editingDevice || !profileId) return
 
         const error = validateDevice(editingDevice)
         if (error) {
@@ -106,6 +119,8 @@ export default function DeviceManagement({ devices, setDevices, setAlerts }: Dev
     }
 
     const handleDeleteDevice = async (deviceId: string) => {
+        if (!profileId) return
+
         const device = devices.find((d) => d.id === deviceId)
         if (!device) return
 
