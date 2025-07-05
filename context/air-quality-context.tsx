@@ -1,7 +1,7 @@
 "use client"
 
-import { createContext, useContext, useState, useEffect, useRef, type ReactNode } from "react";
-import { Client, Stomp } from "@stomp/stompjs";
+import { createContext, useContext, useState, useEffect, useRef, type ReactNode } from "react"
+import { getStompClient } from "@/lib/stompClient"
 
 interface AirQualityContextType {
   airQuality: number
@@ -11,12 +11,14 @@ interface AirQualityContextType {
   setActuatorsActive: (active: boolean) => void
   showAlert: boolean
   setShowAlert: (show: boolean) => void
+  selectedDeviceId: string | null
+  setSelectedDeviceId: (deviceId: string | null) => void
 }
 
 const defaultAirQualityData = Array(6)
     .fill(null)
     .map((_, i) => ({
-      value: Math.floor(Math.random() * 30) + 1, // Valores iniciales bajos (1-30)
+      value: Math.floor(Math.random() * 30) + 1,
       timestamp: `00:0${i}`,
     }))
 
@@ -28,6 +30,8 @@ const AirQualityContext = createContext<AirQualityContextType>({
   setActuatorsActive: () => {},
   showAlert: false,
   setShowAlert: () => {},
+  selectedDeviceId: null,
+  setSelectedDeviceId: () => {},
 })
 
 export function AirQualityProvider({ children }: { children: ReactNode }) {
@@ -35,10 +39,12 @@ export function AirQualityProvider({ children }: { children: ReactNode }) {
   const [airQualityData, setAirQualityData] = useState(defaultAirQualityData)
   const [actuatorsActive, setActuatorsActive] = useState(false)
   const [showAlert, setShowAlert] = useState(false)
+  const [selectedDeviceId, setSelectedDeviceId] = useState<string | null>(null)
   const [isClient, setIsClient] = useState(false)
 
   const airQualityRef = useRef(30)
   const dataInitializedRef = useRef(false)
+  const currentSubscriptionRef = useRef<any>(null)
 
   useEffect(() => {
     setIsClient(true)
@@ -51,115 +57,78 @@ export function AirQualityProvider({ children }: { children: ReactNode }) {
               hour: "2-digit",
               minute: "2-digit",
             }),
-          })),
+          }))
       )
       dataInitializedRef.current = true
     }
   }, [])
 
   useEffect(() => {
-    if (!isClient) return
+    if (!isClient || !selectedDeviceId) return
 
-      const socket = new WebSocket("wss://gasguard-api-282272338419.southamerica-west1.run.app/ws/monitoring");
-      const stompClient = Stomp.over(socket);
+    const stompClient = getStompClient()
 
-    stompClient.connect({}, () => {
-      console.log("Conectado al WebSocket");
+    const setupSubscription = () => {
+      if (currentSubscriptionRef.current) {
+        currentSubscriptionRef.current.unsubscribe()
+      }
 
-      stompClient.subscribe("/topic/gas/device2", (message:any) => {
-          console.log("✅ Suscrito al tópico /topic/gas/device2");
+      console.log(`🔄 Subscribing to /topic/gas/${selectedDeviceId}`)
 
-          const data = JSON.parse(message.body);
-          console.log("VALORES:", data);
+      currentSubscriptionRef.current = stompClient.subscribe(`/topic/gas/${selectedDeviceId}`, (message: any) => {
+        const data = JSON.parse(message.body)
+        const currentValue = Math.min(Math.max(data.value, 0), 100)
+        airQualityRef.current = currentValue
 
-          // logica aquí
-          const currentValue = Math.min(Math.max(data.value, 0), 100)
-          airQualityRef.current = currentValue
+        setAirQualityData((prevData) => {
+          const newData = [
+            ...prevData,
+            {
+              value: currentValue,
+              timestamp: new Date(data.timestamp).toLocaleTimeString([], {
+                hour: "2-digit",
+                minute: "2-digit",
+              }),
+            },
+          ]
+          return newData.slice(-6)
+        })
 
+        setAirQuality(currentValue)
 
-          setAirQualityData((prevData) => {
-            const newData = [
-              ...prevData,
-              {
-                value: currentValue,
-                timestamp: new Date(data.timestamp).toLocaleTimeString([], {
-                  hour: "2-digit",
-                  minute: "2-digit",
-                }),
-              },
-            ]
-            return newData.slice(-6)
-          })
+        if (currentValue > 70) {
+          setActuatorsActive(true)
+          setShowAlert(true)
+        } else {
+          setActuatorsActive(false)
+          setShowAlert(false)
+        }
+      })
+    }
 
+    const onConnect = () => {
+      console.log("✅ Conectado al WebSocket")
+      setupSubscription()
+    }
 
-          setAirQuality(currentValue)
+    if (stompClient.connected) {
+      setupSubscription()
+    } else {
+      stompClient.onConnect = onConnect
+    }
 
-          if (currentValue > 70) {
-            setActuatorsActive(true)
-            setShowAlert(true)
-          } else {
-            setActuatorsActive(false)
-            setShowAlert(false)
-          }
-
-
-      });
-
-
-    }, (error:any) => {
-        console.error("Error STOMP:", error);
-    });
+    stompClient.onStompError = (frame) => {
+      console.error("❌ STOMP error:", frame.headers["message"])
+      console.error("Detalles:", frame.body)
+    }
 
     return () => {
-      stompClient.disconnect(() => console.log("🛑 Desconectado"));
-    };
-
-  }, [isClient])
-
-  /*
-  useEffect(() => {
-    if (!isClient) return
-
-    const interval = setInterval(() => {
-      let currentValue = airQualityRef.current
-
-      // Aumentar la probabilidad de picos altos
-      const isSpike = Math.random() < 0.1
-      const operation = isSpike ? 1 : Math.random() < 0.5 ? 1 : -1
-      const changeAmount = isSpike
-          ? Math.floor(Math.random() * 30) + 20
-          : Math.floor(Math.random() * 10) + 1
-
-      currentValue = Math.min(Math.max(currentValue + operation * changeAmount, 0), 100)
-
-      airQualityRef.current = currentValue
-
-      setAirQualityData((prevData) => {
-        const newData = [
-          ...prevData,
-          {
-            value: currentValue,
-            timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
-          },
-        ]
-
-        return newData.slice(-6)
-      })
-
-      setAirQuality(currentValue)
-
-      if (currentValue > 70) {
-        setActuatorsActive(true)
-        setShowAlert(true)
-      } else {
-        setActuatorsActive(false)
-        setShowAlert(false)
+      if (currentSubscriptionRef.current) {
+        currentSubscriptionRef.current.unsubscribe()
+        currentSubscriptionRef.current = null
       }
-    }, 4000)
-
-    return () => clearInterval(interval)
-  }, [isClient])
-  */
+    }
+  }, [isClient, selectedDeviceId])
 
   const resetAirQuality = () => {
     const resetValue = 30
@@ -171,7 +140,10 @@ export function AirQualityProvider({ children }: { children: ReactNode }) {
       if (newData.length > 0) {
         newData[newData.length - 1] = {
           value: resetValue,
-          timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+          timestamp: new Date().toLocaleTimeString([], {
+            hour: "2-digit",
+            minute: "2-digit",
+          }),
         }
       }
       return newData
@@ -191,6 +163,8 @@ export function AirQualityProvider({ children }: { children: ReactNode }) {
             setActuatorsActive,
             showAlert,
             setShowAlert,
+            selectedDeviceId,
+            setSelectedDeviceId,
           }}
       >
         {children}
@@ -199,6 +173,5 @@ export function AirQualityProvider({ children }: { children: ReactNode }) {
 }
 
 export function useAirQuality() {
-  const context = useContext(AirQualityContext)
-  return context
+  return useContext(AirQualityContext)
 }

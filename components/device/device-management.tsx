@@ -20,25 +20,32 @@ export default function DeviceManagement({ devices, setDevices, setAlerts }: Dev
     const [showSuccess, setShowSuccess] = useState("")
     const [showError, setShowError] = useState("")
     const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
-    const [profileId, setProfileId] = useState<string | null>(null)
+    const [isLoading, setIsLoading] = useState(true)
+
 
     const deviceService = new DeviceService()
 
-
-    useEffect(() => {
-        const storedProfileId = typeof window !== "undefined" ? localStorage.getItem("profileId") : null
-        setProfileId(storedProfileId)
-    }, [])
+    const validateDevice = (device: { deviceId: string; name: string; location?: string }) => {
+        if (!device.deviceId.trim()) return "Device ID is required"
+        if (!device.name.trim()) return "Device name is required"
+        if (device.deviceId.length < 3) return "Device ID must be at least 3 characters"
+        if (device.name.length < 2) return "Device name must be at least 2 characters"
+        return null
+    }
 
     useEffect(() => {
         const fetchDevices = async () => {
             if (!profileId) return
             try {
+                setIsLoading(true)
+
                 const devicesFromApi = await deviceService.getAllDevicesByProfileId(profileId)
                 setDevices(devicesFromApi)
             } catch (error) {
                 console.error("Error loading devices:", error)
                 setShowError("Error loading devices. Please try again.")
+            } finally {
+                setIsLoading(false)
             }
         }
         fetchDevices()
@@ -160,6 +167,7 @@ export default function DeviceManagement({ devices, setDevices, setAlerts }: Dev
 
                 <DeviceListCard
                     devices={devices}
+                    isLoading={isLoading}
                     editingDevice={editingDevice}
                     isEditDialogOpen={isEditDialogOpen}
                     setIsEditDialogOpen={setIsEditDialogOpen}

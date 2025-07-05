@@ -34,4 +34,26 @@ export class HouseholdService {
         }
     }
 
+
+    async updateHouseholdMember(profileId, householdMemberData) {
+        try {
+            const response = await http().patch(`/contacts/${profileId}`, householdMemberData);
+            return response.data;
+        } catch (error) {
+            console.error("Error al actualizar miembro del hogar:", error);
+            throw error;
+        }
+    }
+
+
+    async deleteHouseholdMember(profileId) {
+        try {
+            const response = await http().delete(`/contacts/${profileId}`);
+            return response.data;
+        } catch (error) {
+            console.error("Error al eliminar miembro del hogar:", error);
+            throw error;
+        }
+    }
+
 }

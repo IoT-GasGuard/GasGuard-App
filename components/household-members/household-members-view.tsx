@@ -1,3 +1,4 @@
+
 "use client"
 
 import { useState, useEffect } from "react"
@@ -12,6 +13,7 @@ import { Switch } from "@/components/ui/switch"
 import { Trash2, Edit, Plus, CheckCircle, AlertTriangle, Users, Phone, Mail, Bell } from "lucide-react"
 import { HouseholdService } from "@/public/services/household.service"
 import { HouseholdMemberModel } from "@/shared/householdMember.model"
+import {Loading} from "@/components/ui/loading";
 
 interface HouseholdMember {
     id: string
@@ -108,8 +110,6 @@ export default function HouseholdMembers({ setAlerts }: HouseholdMembersProps) {
             }
 
             const createdMember = await householdService.createHouseholdMember(householdMemberData)
-
-
             await fetchHouseholdMembers(profileId)
             setNewMember({
                 name: "",
@@ -150,7 +150,7 @@ export default function HouseholdMembers({ setAlerts }: HouseholdMembersProps) {
             return
         }
 
-        // check if email already exists
+        // Check if email already exists
         if (members.some((m) => m.email === editingMember.email && m.id !== editingMember.id)) {
             setShowError("A member with this email already exists")
             setTimeout(() => setShowError(""), 3000)
@@ -158,9 +158,7 @@ export default function HouseholdMembers({ setAlerts }: HouseholdMembersProps) {
         }
 
         try {
-           // await householdService.updateHouseholdMember(editingMember.id, editingMember)
-
-
+            await householdService.updateHouseholdMember(editingMember.id, editingMember)
             setMembers(members.map((m) => (m.id === editingMember.id ? editingMember : m)))
             setShowSuccess(`${editingMember.name}'s information has been updated`)
             setIsEditDialogOpen(false)
@@ -185,15 +183,13 @@ export default function HouseholdMembers({ setAlerts }: HouseholdMembersProps) {
         }
     }
 
-    const handleDeleteMember = async (memberId: string) => {
-        const member = members.find((m) => m.id === memberId)
+    const handleDeleteMember = async (profileId: string) => {
+        const member = members.find((m) => m.id === profileId)
         if (!member) return
 
         try {
-            //await householdService.deleteHouseholdMember(memberId)
-
-
-            setMembers(members.filter((m) => m.id !== memberId))
+            await householdService.deleteHouseholdMember(profileId)
+            setMembers(members.filter((m) => m.id !== profileId))
             setShowSuccess(`${member.name} has been removed from household members`)
 
             setAlerts((prev: any) => [
@@ -306,7 +302,6 @@ export default function HouseholdMembers({ setAlerts }: HouseholdMembersProps) {
                 </Dialog>
             </div>
 
-            {/* Success/Error Messages */}
             {showSuccess && (
                 <Alert className="bg-green-900 border-green-700">
                     <CheckCircle className="h-4 w-4" />
@@ -321,7 +316,6 @@ export default function HouseholdMembers({ setAlerts }: HouseholdMembersProps) {
                 </Alert>
             )}
 
-            {/* Members List */}
             <Card className="gasguard-card">
                 <CardHeader>
                     <CardTitle className="text-white flex items-center gap-2">
@@ -331,7 +325,7 @@ export default function HouseholdMembers({ setAlerts }: HouseholdMembersProps) {
                 </CardHeader>
                 <CardContent>
                     {loading ? (
-                        <p className="text-center text-gray-400 py-8">Loading household members...</p>
+                        <Loading />
                     ) : members.length === 0 ? (
                         <div className="text-center py-8">
                             <Users className="w-12 h-12 text-gray-600 mx-auto mb-4" />
@@ -352,7 +346,6 @@ export default function HouseholdMembers({ setAlerts }: HouseholdMembersProps) {
                                                     </Badge>
                                                 )}
                                             </div>
-
                                             <div className="grid grid-cols-1 md:grid-cols-2 gap-2 mb-3">
                                                 <div className="flex items-center gap-2 text-sm text-gray-400">
                                                     <Mail className="w-4 h-4" />
@@ -363,7 +356,6 @@ export default function HouseholdMembers({ setAlerts }: HouseholdMembersProps) {
                                                     {member.phone}
                                                 </div>
                                             </div>
-
                                             <div className="flex items-center gap-4 text-sm">
                                                 <div className="flex items-center gap-2">
                                                     <Bell className="w-4 h-4 text-gray-400" />
@@ -378,7 +370,6 @@ export default function HouseholdMembers({ setAlerts }: HouseholdMembersProps) {
                                                 </div>
                                             </div>
                                         </div>
-
                                         <div className="flex items-center gap-2">
                                             <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
                                                 <DialogTrigger asChild>
@@ -489,7 +480,6 @@ export default function HouseholdMembers({ setAlerts }: HouseholdMembersProps) {
                 </CardContent>
             </Card>
 
-            {/* Notification Settings */}
             <Card className="gasguard-card">
                 <CardHeader>
                     <CardTitle className="text-white">Notification Settings</CardTitle>
