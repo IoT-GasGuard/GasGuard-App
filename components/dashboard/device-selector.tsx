@@ -26,6 +26,13 @@ export function DeviceSelector({ selectedDeviceId, onDeviceChange }: DeviceSelec
     }, [router])
 
     useEffect(() => {
+        if (typeof window !== 'undefined') {
+            const id = localStorage.getItem("profileId");
+            setProfileId(id);
+        }
+    }, []);
+
+    useEffect(() => {
         const fetchDevices = async () => {
             if (!profileId) return;
 

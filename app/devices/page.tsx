@@ -2,13 +2,25 @@
 
 import Navbar from "@/components/navbar";
 import DeviceManagement from "@/components/device/device-management";
-import { useState } from "react";
+import {useEffect, useState} from "react";
 import { Device } from "@/shared/device.model";
+import { useRouter } from "next/navigation";
 
 export default function DevicesPage() {
     const [currentTab, setCurrentTab] = useState("device");
     const [devices, setDevices] = useState<Device[]>([]);
     const [alerts, setAlerts] = useState<any[]>([]);
+    const router = useRouter();
+
+    useEffect(() => {
+
+        if (typeof window !== 'undefined') {
+            const token = localStorage.getItem("token");
+            if (!token) {
+                router.push("/");
+            }
+        }
+    }, [router]);
 
     return (
         <div className="min-h-screen bg-black text-white">
