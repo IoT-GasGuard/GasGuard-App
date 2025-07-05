@@ -10,6 +10,7 @@ import { Badge } from "@/components/ui/badge"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Lightbulb, Settings, Info } from "lucide-react"
 import { DeviceService } from "@/public/services/device.service"
+import { Loading } from "@/components/ui/loading"
 
 interface Device {
   id: string
@@ -253,7 +254,7 @@ export default function LightingControl({ systemStatus, setSystemStatus, setAler
             </CardHeader>
             <CardContent className="space-y-4">
               {loadingDevices ? (
-                  <div className="text-gray-400">Loading devices...</div>
+                  <Loading />
               ) : (
                   devices.map(device => (
                       <div key={device.id} className="p-4 gasguard-input rounded-lg">

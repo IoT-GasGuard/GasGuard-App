@@ -5,7 +5,7 @@ let client: Client | null = null
 export function getStompClient(): Client {
   if (!client) {
     client = new Client({
-      brokerURL: "ws://localhost:8080/ws/monitoring", // 🔄 cambia a tu endpoint real si es necesario
+      brokerURL: process.env.NEXT_PUBLIC_STOMP_BROKER_URL,
       reconnectDelay: 5000,
       debug: (str) => console.log("[STOMP] " + str),
     })
